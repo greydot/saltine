@@ -43,8 +43,8 @@ import           Foreign.Ptr
 import           Foreign.Marshal.Alloc
 import           Foreign.Storable
 import           System.IO.Unsafe
-import qualified Data.ByteString                   as S
-import           Data.ByteString                     (ByteString)
+import qualified Data.ByteString as S
+import           Data.ByteString (ByteString)
 import           Data.Data (Data, Typeable)
 import           Data.Hashable (Hashable)
 import           GHC.Generics (Generic)
@@ -54,6 +54,9 @@ import           GHC.Generics (Generic)
 
 -- | An opaque 'box' cryptographic secret key.
 newtype SecretKey = SK ByteString deriving (Eq, Ord, Hashable, Data, Typeable, Generic)
+
+instance Show SecretKey where
+  show (SK bs) = showBase16 bs
 
 instance IsEncoding SecretKey where
   decode v = if S.length v == Bytes.signSK
@@ -65,6 +68,9 @@ instance IsEncoding SecretKey where
 
 -- | An opaque 'box' cryptographic public key.
 newtype PublicKey = PK ByteString deriving (Eq, Ord, Data, Typeable, Hashable, Generic)
+
+instance Show PublicKey where
+  show (PK bs) = showBase16 bs
 
 instance IsEncoding PublicKey where
   decode v = if S.length v == Bytes.signPK

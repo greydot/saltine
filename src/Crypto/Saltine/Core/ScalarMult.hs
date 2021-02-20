@@ -74,8 +74,14 @@ import           GHC.Generics (Generic)
 -- | A group element.
 newtype GroupElement = GE ByteString deriving (Eq, Ord, Hashable, Data, Typeable, Generic)
 
+instance Show GroupElement where
+  show (GE bs) = showBase16 bs
+
 -- | A scalar integer.
 newtype Scalar       = Sc ByteString deriving (Eq, Ord, Hashable, Data, Typeable, Generic)
+
+instance Show Scalar where
+  show (Sc bs) = showBase16 bs
 
 instance IsEncoding GroupElement where
   decode v = if S.length v == Bytes.mult

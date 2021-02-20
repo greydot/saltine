@@ -64,6 +64,9 @@ import           GHC.Generics (Generic)
 -- | An opaque 'secretbox' cryptographic key.
 newtype Key = Key ByteString deriving (Eq, Ord, Hashable, Data, Typeable, Generic)
 
+instance Show Key where
+  show (Key bs) = showBase16 bs
+
 instance IsEncoding Key where
   decode v = if S.length v == Bytes.secretBoxKey
            then Just (Key v)
@@ -74,6 +77,9 @@ instance IsEncoding Key where
 
 -- | An opaque 'secretbox' nonce.
 newtype Nonce = Nonce ByteString deriving (Eq, Ord, Hashable, Data, Typeable, Generic)
+
+instance Show Nonce where
+  show (Nonce bs) = showBase16 bs
 
 instance IsEncoding Nonce where
   decode v = if S.length v == Bytes.secretBoxNonce

@@ -6,9 +6,12 @@ import           Foreign.Ptr
 import           System.IO.Unsafe
 
 import           Control.Applicative
-import qualified Data.ByteString        as S
-import           Data.ByteString          (ByteString)
+import qualified Data.ByteString as S
+import qualified Data.ByteString.Char8 as Char8
+import           Data.ByteString (ByteString)
+import qualified Data.ByteString.Base16 as Base16
 import           Data.ByteString.Unsafe
+import           Data.Char (toUpper, toLower, isSpace)
 import           Data.Monoid
 
 -- | Returns @Nothing@ if the subtraction would result in an
@@ -66,7 +69,7 @@ unsafeDidSucceed = go . unsafePerformIO
 -- | Convenience function for accessing constant C strings
 constByteStrings :: [ByteString] -> ([CStringLen] -> IO b) -> IO b
 constByteStrings =
-  foldr (\v kk -> \k -> (unsafeUseAsCStringLen v) (\a -> kk (\as -> k (a:as)))) ($ [])
+  foldr (\ v kk k -> unsafeUseAsCStringLen v (\a -> kk (\as -> k (a:as)))) ($ [])
 
 -- | Slightly safer cousin to 'buildUnsafeByteString' that remains in the
 -- 'IO' monad.
@@ -89,6 +92,33 @@ buildUnsafeByteString n = unsafePerformIO . buildUnsafeByteString' n
 randomByteString :: Int -> IO ByteString
 randomByteString n =
   snd <$> buildUnsafeByteString' n (`c_randombytes_buf` fromIntegral n)
+
+-- | Convert a bytestring to a Base16-encoded string with bytes separated
+--   with spaces.
+-- 
+-- prop> showBase16 "\x12\x34\xf3\xd6" == "12 34 F3 D6"
+showBase16 :: ByteString -> String
+showBase16 bs
+  | even (S.length bs) = go s
+  | otherwise = error "The argument length must be a multiple of 2"
+  where s = Char8.unpack
+          . Char8.map toUpper
+          $ Base16.encode bs
+        go [] = []
+        go [a, b] = [a, b]
+        go (a:b:xs) = a:b:' ':go xs
+        go _ = error "unreachable" -- this case is checked for above
+
+-- | Convert a base16-encoded string into a bytestring.
+--   This is the reverse operation to 'showBase16'.
+-- 
+-- prop> readBase16 (showBase16 bs) == Just bs
+readBase16 :: String -> Maybe ByteString
+readBase16 = hush
+           . Base16.decode
+           . Char8.map toLower
+           . Char8.pack
+           . filter (not . isSpace)
 
 -- | To prevent a dependency on package 'errors'
 hush :: Either s a -> Maybe a
